@@ -24,8 +24,9 @@ const Duration kDefaultSlideshowInterval = Duration(seconds: 30);
 
 const Duration kWeatherRefreshInterval = Duration(minutes: kDefaultWeatherRefreshIntervalMinutes);
 const Duration kAirQualityRefreshInterval = Duration(minutes: 30);
-const Duration kWaterQualityRefreshInterval = Duration(hours: 2);
+const Duration kWaterQualityRefreshInterval = Duration(hours: 12);
 const Duration kCalendarRefreshInterval = Duration(minutes: 5);
+const Duration kSlideshowRescanInterval = Duration(hours: 1);
 
 const int kMaxCacheSizeMb = 500;
 const int kPrefetchCount = 3;

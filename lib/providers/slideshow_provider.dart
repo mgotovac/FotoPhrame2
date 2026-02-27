@@ -14,7 +14,9 @@ class SlideshowProvider extends ChangeNotifier {
 
   List<MediaItem> _queue = [];
   int _currentIndex = -1;
+  List<NasSource> _sources = [];
   Timer? _autoAdvanceTimer;
+  Timer? _rescanTimer;
   bool _isPaused = false;
   bool _isScanning = false;
   String? _error;
@@ -48,6 +50,7 @@ class SlideshowProvider extends ChangeNotifier {
 
   Future<void> scanSources(List<NasSource> sources) async {
     if (_isScanning) return;
+    _sources = sources;
     _isScanning = true;
     _error = null;
     notifyListeners();
@@ -100,6 +103,49 @@ class SlideshowProvider extends ChangeNotifier {
 
     notifyListeners();
     _startAutoAdvance();
+    _startPeriodicRescan();
+  }
+
+  void _startPeriodicRescan() {
+    _rescanTimer?.cancel();
+    _rescanTimer = Timer.periodic(kSlideshowRescanInterval, (_) => _incrementalRescan());
+  }
+
+  Future<void> _incrementalRescan() async {
+    if (_isScanning || _sources.isEmpty) return;
+
+    final existingPaths = _queue.map((e) => e.remotePath).toSet();
+    final newItems = <MediaItem>[];
+
+    for (final source in _sources) {
+      NasService? service;
+      try {
+        service = _nasFactory.create(source);
+        await service.connect();
+        for (final folder in source.folders) {
+          try {
+            final items = await service.listMediaFiles(
+              folder.path,
+              recursive: folder.recursive,
+            );
+            for (final item in items) {
+              if (!existingPaths.contains(item.remotePath)) {
+                newItems.add(item);
+              }
+            }
+          } catch (_) {}
+        }
+      } catch (_) {
+      } finally {
+        await service?.disconnect();
+      }
+    }
+
+    if (newItems.isNotEmpty) {
+      newItems.shuffle();
+      _queue.addAll(newItems);
+      notifyListeners();
+    }
   }
 
   void next() {
@@ -210,6 +256,7 @@ class SlideshowProvider extends ChangeNotifier {
   @override
   void dispose() {
     _autoAdvanceTimer?.cancel();
+    _rescanTimer?.cancel();
     super.dispose();
   }
 }

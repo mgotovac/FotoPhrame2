@@ -34,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (page == 1) {
       context.read<WeatherProvider>().fetch();
       context.read<AirQualityProvider>().fetch();
-      context.read<WaterQualityProvider>().fetch();
       context.read<CalendarProvider>().fetch();
     }
   }
