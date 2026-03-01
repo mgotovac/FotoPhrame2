@@ -13,34 +13,42 @@ class CalendarProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Timer? _refreshTimer;
-  CalendarConfig? _config;
+  List<CalendarConfig> _configs = [];
 
   CalendarProvider(this._service);
 
   List<CalendarEvent> get events => _events;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get hasConfig => _configs.isNotEmpty;
 
   void onSettingsChanged(AppSettings settings) {
-    final configChanged = _config?.apiKey != settings.calendarConfig?.apiKey ||
-        _config?.calendarId != settings.calendarConfig?.calendarId;
-    _config = settings.calendarConfig;
+    final oldSet = _configs.map((c) => '${c.id}:${c.icsUrl}').toSet();
+    final newSet =
+        settings.calendarConfigs.map((c) => '${c.id}:${c.icsUrl}').toSet();
+    _configs = settings.calendarConfigs;
 
-    if (_config != null && configChanged) {
-      fetch();
-      _startPeriodicRefresh();
+    if (oldSet != newSet) {
+      if (_configs.isNotEmpty) {
+        fetch();
+        _startPeriodicRefresh();
+      } else {
+        _events = [];
+        _refreshTimer?.cancel();
+        notifyListeners();
+      }
     }
   }
 
   Future<void> fetch() async {
-    if (_config == null) return;
+    if (_configs.isEmpty) return;
 
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _events = await _service.fetchEvents(_config!);
+      _events = await _service.fetchEvents(_configs);
     } catch (e) {
       _error = e.toString();
     }

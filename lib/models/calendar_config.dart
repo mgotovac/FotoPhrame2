@@ -1,19 +1,23 @@
 class CalendarConfig {
-  final String apiKey;
-  final String calendarId;
+  final String id;
+  final String name;
+  final String icsUrl;
 
   const CalendarConfig({
-    required this.apiKey,
-    required this.calendarId,
+    required this.id,
+    required this.name,
+    required this.icsUrl,
   });
 
   Map<String, dynamic> toJson() => {
-        'apiKey': apiKey,
-        'calendarId': calendarId,
+        'id': id,
+        'name': name,
+        'icsUrl': icsUrl,
       };
 
   factory CalendarConfig.fromJson(Map<String, dynamic> json) => CalendarConfig(
-        apiKey: json['apiKey'] as String,
-        calendarId: json['calendarId'] as String,
+        id: json['id'] as String,
+        name: json['name'] as String,
+        icsUrl: json['icsUrl'] as String,
       );
 }

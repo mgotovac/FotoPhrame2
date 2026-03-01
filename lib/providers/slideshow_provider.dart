@@ -421,15 +421,7 @@ class SlideshowProvider extends ChangeNotifier {
       await _loadItemDimensions(current);
     }
 
-    if (!current.isPortrait) {
-      if (_companionIndex != null) {
-        _companionIndex = null;
-        notifyListeners();
-      }
-      return;
-    }
-
-    // Current is portrait — find the closest portrait companion
+    // Find the closest companion with the same orientation (portrait↔portrait or landscape↔landscape)
     for (var i = 1; i <= kPrefetchCount && i < _queue.length; i++) {
       final idx = (_currentIndex + i) % _queue.length;
       final candidate = _queue[idx];
@@ -439,7 +431,7 @@ class SlideshowProvider extends ChangeNotifier {
       if (candidate.width == null && candidate.type == MediaType.image) {
         await _loadItemDimensions(candidate);
       }
-      if (candidate.isPortrait) {
+      if (candidate.isPortrait == current.isPortrait) {
         if (_companionIndex != idx) {
           _companionIndex = idx;
           notifyListeners();

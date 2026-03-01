@@ -1,88 +1,102 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../../models/calendar_config.dart';
 
+/// Full-screen editor for a single CalendarConfig.
+/// Pass [initial] to edit an existing entry; omit (null) to create a new one.
+/// Returns a [CalendarConfig] via Navigator.pop on save.
 class CalendarConfigEditor extends StatefulWidget {
-  final CalendarConfig? config;
-  final ValueChanged<CalendarConfig?> onChanged;
+  final CalendarConfig? initial;
 
-  const CalendarConfigEditor({
-    super.key,
-    this.config,
-    required this.onChanged,
-  });
+  const CalendarConfigEditor({super.key, this.initial});
 
   @override
   State<CalendarConfigEditor> createState() => _CalendarConfigEditorState();
 }
 
 class _CalendarConfigEditorState extends State<CalendarConfigEditor> {
-  late TextEditingController _apiKeyController;
-  late TextEditingController _calendarIdController;
+  late TextEditingController _nameController;
+  late TextEditingController _icsUrlController;
 
   @override
   void initState() {
     super.initState();
-    _apiKeyController =
-        TextEditingController(text: widget.config?.apiKey ?? '');
-    _calendarIdController =
-        TextEditingController(text: widget.config?.calendarId ?? '');
+    _nameController =
+        TextEditingController(text: widget.initial?.name ?? '');
+    _icsUrlController =
+        TextEditingController(text: widget.initial?.icsUrl ?? '');
   }
 
   @override
   void dispose() {
-    _apiKeyController.dispose();
-    _calendarIdController.dispose();
+    _nameController.dispose();
+    _icsUrlController.dispose();
     super.dispose();
   }
 
-  void _onChanged() {
-    final apiKey = _apiKeyController.text.trim();
-    final calendarId = _calendarIdController.text.trim();
+  void _save() {
+    final name = _nameController.text.trim();
+    final icsUrl = _icsUrlController.text.trim();
+    if (name.isEmpty || icsUrl.isEmpty) return;
 
-    if (apiKey.isEmpty || calendarId.isEmpty) {
-      widget.onChanged(null);
-    } else {
-      widget.onChanged(CalendarConfig(
-        apiKey: apiKey,
-        calendarId: calendarId,
-      ));
-    }
+    final config = CalendarConfig(
+      id: widget.initial?.id ?? const Uuid().v4(),
+      name: name,
+      icsUrl: icsUrl,
+    );
+    Navigator.of(context).pop(config);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: _apiKeyController,
-          decoration: const InputDecoration(
-            labelText: 'Google Calendar API Key',
-            hintText: 'AIza...',
-            border: OutlineInputBorder(),
+    final isNew = widget.initial == null;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isNew ? 'Add Calendar' : 'Edit Calendar'),
+        actions: [
+          TextButton(
+            onPressed: _save,
+            child: const Text('Save'),
           ),
-          obscureText: true,
-          onChanged: (_) => _onChanged(),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _calendarIdController,
-          decoration: const InputDecoration(
-            labelText: 'Calendar ID',
-            hintText: 'your-email@gmail.com or calendar ID',
-            border: OutlineInputBorder(),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: 'Calendar name',
+              hintText: 'e.g. Work, Personal, Family',
+              border: OutlineInputBorder(),
+            ),
+            textCapitalization: TextCapitalization.words,
           ),
-          onChanged: (_) => _onChanged(),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Note: The calendar must be set to public for API key access.',
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 12,
+          const SizedBox(height: 16),
+          TextField(
+            controller: _icsUrlController,
+            decoration: const InputDecoration(
+              labelText: 'Calendar ICS URL',
+              hintText: 'https://calendar.google.com/calendar/ical/...',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.url,
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          Text(
+            'How to get your private calendar URL:\n'
+            '1. Open Google Calendar → Settings (⚙)\n'
+            '2. Click your calendar name in the left sidebar\n'
+            '3. Scroll to "Secret address in iCal format"\n'
+            '4. Copy the URL and paste it above\n'
+            'Works with any calendar — no need to make it public.',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

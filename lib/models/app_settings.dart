@@ -1,3 +1,4 @@
+import 'package:uuid/uuid.dart';
 import 'nas_source.dart';
 import 'water_quality_config.dart';
 import 'calendar_config.dart';
@@ -14,7 +15,7 @@ class AppSettings {
   final String iqAirState;
   final String iqAirCountry;
   final WaterQualityConfig? waterQualityConfig;
-  final CalendarConfig? calendarConfig;
+  final List<CalendarConfig> calendarConfigs;
 
   const AppSettings({
     this.nasSources = const [],
@@ -27,7 +28,7 @@ class AppSettings {
     this.iqAirState = kDefaultState,
     this.iqAirCountry = kDefaultCountry,
     this.waterQualityConfig,
-    this.calendarConfig,
+    this.calendarConfigs = const [],
   });
 
   AppSettings copyWith({
@@ -41,11 +42,10 @@ class AppSettings {
     String? iqAirState,
     String? iqAirCountry,
     WaterQualityConfig? waterQualityConfig,
-    CalendarConfig? calendarConfig,
+    List<CalendarConfig>? calendarConfigs,
     bool clearOpenWeatherApiKey = false,
     bool clearIqAirApiKey = false,
     bool clearWaterQualityConfig = false,
-    bool clearCalendarConfig = false,
   }) =>
       AppSettings(
         nasSources: nasSources ?? this.nasSources,
@@ -64,9 +64,7 @@ class AppSettings {
         waterQualityConfig: clearWaterQualityConfig
             ? null
             : (waterQualityConfig ?? this.waterQualityConfig),
-        calendarConfig: clearCalendarConfig
-            ? null
-            : (calendarConfig ?? this.calendarConfig),
+        calendarConfigs: calendarConfigs ?? this.calendarConfigs,
       );
 
   Map<String, dynamic> toJson() => {
@@ -80,7 +78,7 @@ class AppSettings {
         'iqAirState': iqAirState,
         'iqAirCountry': iqAirCountry,
         'waterQualityConfig': waterQualityConfig?.toJson(),
-        'calendarConfig': calendarConfig?.toJson(),
+        'calendarConfigs': calendarConfigs.map((c) => c.toJson()).toList(),
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -105,9 +103,36 @@ class AppSettings {
             ? WaterQualityConfig.fromJson(
                 json['waterQualityConfig'] as Map<String, dynamic>)
             : null,
-        calendarConfig: json['calendarConfig'] != null
-            ? CalendarConfig.fromJson(
-                json['calendarConfig'] as Map<String, dynamic>)
-            : null,
+        calendarConfigs: _migrateCalendarConfigs(json),
       );
+
+  // Handles both new list format ('calendarConfigs') and old single format ('calendarConfig').
+  static List<CalendarConfig> _migrateCalendarConfigs(
+      Map<String, dynamic> json) {
+    // New list format
+    if (json['calendarConfigs'] is List) {
+      return (json['calendarConfigs'] as List).map((e) {
+        try {
+          return CalendarConfig.fromJson(e as Map<String, dynamic>);
+        } catch (_) {
+          return null;
+        }
+      }).whereType<CalendarConfig>().toList();
+    }
+    // Legacy single-config format — migrate automatically
+    if (json['calendarConfig'] != null) {
+      try {
+        final old = json['calendarConfig'] as Map<String, dynamic>;
+        final icsUrl = old['icsUrl'] as String;
+        return [
+          CalendarConfig(
+            id: const Uuid().v4(),
+            name: 'My Calendar',
+            icsUrl: icsUrl,
+          )
+        ];
+      } catch (_) {}
+    }
+    return [];
+  }
 }

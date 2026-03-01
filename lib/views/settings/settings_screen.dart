@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/nas_source.dart';
+import '../../models/calendar_config.dart';
 import '../../providers/settings_provider.dart';
 import 'widgets/nas_source_editor.dart';
 import 'widgets/api_key_field.dart';
@@ -146,14 +147,44 @@ class SettingsScreen extends StatelessWidget {
               ),
               const Divider(height: 32),
 
-              // === Calendar ===
-              _SectionHeader(title: 'Google Calendar'),
-              const SizedBox(height: 8),
-              CalendarConfigEditor(
-                config: settings.calendarConfig,
-                onChanged: (config) =>
-                    provider.updateCalendarConfig(config),
+              // === Calendars ===
+              _SectionHeader(
+                title: 'Calendars',
+                trailing: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () => _addCalendar(context, provider),
+                ),
               ),
+              if (settings.calendarConfigs.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text('No calendars configured',
+                      style: TextStyle(color: Colors.grey)),
+                ),
+              ...settings.calendarConfigs.map((cal) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(cal.name),
+                    subtitle: Text(
+                      cal.icsUrl,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 20),
+                          onPressed: () =>
+                              _editCalendar(context, provider, cal),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, size: 20),
+                          onPressed: () =>
+                              provider.removeCalendarConfig(cal.id),
+                        ),
+                      ],
+                    ),
+                  )),
               const SizedBox(height: 32),
             ],
           );
@@ -181,6 +212,29 @@ class SettingsScreen extends StatelessWidget {
     );
     if (result != null) {
       await provider.updateNasSource(result);
+    }
+  }
+
+  Future<void> _addCalendar(
+      BuildContext context, SettingsProvider provider) async {
+    final result = await Navigator.push<CalendarConfig>(
+      context,
+      MaterialPageRoute(builder: (_) => const CalendarConfigEditor()),
+    );
+    if (result != null) {
+      await provider.addCalendarConfig(result);
+    }
+  }
+
+  Future<void> _editCalendar(BuildContext context, SettingsProvider provider,
+      CalendarConfig config) async {
+    final result = await Navigator.push<CalendarConfig>(
+      context,
+      MaterialPageRoute(
+          builder: (_) => CalendarConfigEditor(initial: config)),
+    );
+    if (result != null) {
+      await provider.updateCalendarConfig(result);
     }
   }
 }

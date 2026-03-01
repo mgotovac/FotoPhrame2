@@ -4,6 +4,7 @@ import '../../models/media_item.dart';
 import '../../providers/slideshow_provider.dart';
 import '../../providers/settings_provider.dart';
 import 'widgets/dual_portrait_display.dart';
+import 'widgets/dual_landscape_display.dart';
 import 'widgets/photo_display.dart';
 import 'widgets/video_display.dart';
 import 'widgets/media_controls_overlay.dart';
@@ -117,18 +118,36 @@ class _PhotoFrameViewState extends State<PhotoFrameView> {
           if (compSource != null) slideshow.ensureCached(companion, compSource.source);
         }
 
+        final isLandscape =
+            MediaQuery.of(context).orientation == Orientation.landscape;
+        final showDualPortrait =
+            isLandscape && item.isPortrait && companion != null && companion.isCached;
+        final showDualLandscape =
+            !isLandscape && !item.isPortrait && companion != null && companion.isCached;
+
         return MediaControlsOverlay(
           onNext: slideshow.next,
           onPrevious: slideshow.previous,
           child: AnimatedSwitcher(
+            // Keyed on orientation so the switcher is recreated on rotation,
+            // preventing the in-progress fade from rendering the old layout
+            // widget under the new orientation constraints (distortion).
+            key: ValueKey(isLandscape),
             duration: const Duration(milliseconds: 800),
-            child: companion != null && companion.isCached
+            child: showDualPortrait
                 ? DualPortraitDisplay(
-                    key: ValueKey('${item.remotePath}+${companion.remotePath}'),
+                    key: ValueKey('${item.remotePath}+${companion!.remotePath}'),
                     primary: item,
                     companion: companion,
                   )
-                : _buildMediaDisplay(item),
+                : showDualLandscape
+                    ? DualLandscapeDisplay(
+                        key: ValueKey(
+                            '${item.remotePath}+${companion!.remotePath}'),
+                        primary: item,
+                        companion: companion,
+                      )
+                    : _buildMediaDisplay(item),
           ),
         );
       },

@@ -79,12 +79,25 @@ class SettingsProvider extends ChangeNotifier {
     await _save();
   }
 
-  Future<void> updateCalendarConfig(CalendarConfig? config) async {
-    if (config == null) {
-      _settings = _settings.copyWith(clearCalendarConfig: true);
-    } else {
-      _settings = _settings.copyWith(calendarConfig: config);
-    }
+  Future<void> addCalendarConfig(CalendarConfig config) async {
+    final configs = List<CalendarConfig>.from(_settings.calendarConfigs)
+      ..add(config);
+    _settings = _settings.copyWith(calendarConfigs: configs);
+    await _save();
+  }
+
+  Future<void> removeCalendarConfig(String id) async {
+    final configs =
+        _settings.calendarConfigs.where((c) => c.id != id).toList();
+    _settings = _settings.copyWith(calendarConfigs: configs);
+    await _save();
+  }
+
+  Future<void> updateCalendarConfig(CalendarConfig config) async {
+    final configs = _settings.calendarConfigs
+        .map((c) => c.id == config.id ? config : c)
+        .toList();
+    _settings = _settings.copyWith(calendarConfigs: configs);
     await _save();
   }
 }

@@ -29,104 +29,165 @@ class CalendarWidget extends StatelessWidget {
                       color: Colors.white38, size: 32),
                   const SizedBox(height: 8),
                   Text('Calendar unavailable',
-                      style:
-                          TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                      style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.4))),
                 ],
               ),
             ),
           );
         }
 
-        if (provider.events.isEmpty) {
+        if (!provider.isLoading && provider.events.isEmpty && provider.error == null) {
           return _CalCard(
             child: Center(
               child: Text(
-                'Configure Google Calendar\nin settings',
+                provider.hasConfig
+                    ? 'No events in the next 5 days'
+                    : 'Configure Google Calendar\nin settings',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                style:
+                    TextStyle(color: Colors.white.withValues(alpha: 0.4)),
               ),
             ),
           );
         }
 
-        return _CalCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today,
-                      color: Colors.white54, size: 20),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Upcoming Events',
-                    style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ...provider.events.take(8).map(
-                    (event) => _buildEventItem(event),
-                  ),
-            ],
-          ),
-        );
+        return _CalCard(child: _DayTable(events: provider.events));
       },
     );
   }
+}
 
-  Widget _buildEventItem(CalendarEvent event) {
+class _DayTable extends StatelessWidget {
+  final List<CalendarEvent> events;
+  const _DayTable({required this.events});
+
+  @override
+  Widget build(BuildContext context) {
     final now = DateTime.now();
-    final isToday = event.start.year == now.year &&
-        event.start.month == now.month &&
-        event.start.day == now.day;
+    final today = DateTime(now.year, now.month, now.day);
 
-    final timeStr = event.isAllDay
-        ? 'All day'
-        : DateFormat('HH:mm').format(event.start);
+    // Group events into 5 day buckets (today … today+4)
+    final byDay = List.generate(5, (_) => <CalendarEvent>[]);
+    for (final event in events) {
+      final idx = event.start.difference(today).inDays;
+      if (idx >= 0 && idx < 5) byDay[idx].add(event);
+    }
 
-    final dateStr = isToday
-        ? 'Today'
-        : DateFormat('E, d MMM').format(event.start);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 3,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isToday ? Colors.blue : Colors.white24,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 12),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int i = 0; i < 5; i++) ...[
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  '$dateStr  $timeStr',
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
-                ),
-              ],
+            child: _DayColumn(
+              date: today.add(Duration(days: i)),
+              events: byDay[i],
+              isToday: i == 0,
             ),
           ),
+          if (i < 4)
+            Container(
+              width: 1,
+              height: double.infinity,
+              color: Colors.white.withValues(alpha: 0.08),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _DayColumn extends StatelessWidget {
+  final DateTime date;
+  final List<CalendarEvent> events;
+  final bool isToday;
+
+  const _DayColumn({
+    required this.date,
+    required this.events,
+    required this.isToday,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Day header
+          Text(
+            DateFormat('EEE').format(date).toUpperCase(),
+            style: TextStyle(
+              color: isToday ? Colors.blue : Colors.white54,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            DateFormat('d').format(date),
+            style: TextStyle(
+              color: isToday ? Colors.white : Colors.white70,
+              fontSize: 20,
+              fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.12)),
+          const SizedBox(height: 6),
+          // Events
+          if (events.isEmpty)
+            Text(
+              '–',
+              style:
+                  TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 12),
+            )
+          else
+            for (final event in events)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _EventChip(event: event, isToday: isToday),
+              ),
         ],
       ),
+    );
+  }
+}
+
+class _EventChip extends StatelessWidget {
+  final CalendarEvent event;
+  final bool isToday;
+  const _EventChip({required this.event, required this.isToday});
+
+  @override
+  Widget build(BuildContext context) {
+    final timeStr =
+        event.isAllDay ? 'All day' : DateFormat('HH:mm').format(event.start);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          event.title,
+          style: TextStyle(
+            color: isToday ? Colors.white : Colors.white.withValues(alpha: 0.8),
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          timeStr,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.4),
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -138,7 +199,7 @@ class _CalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
