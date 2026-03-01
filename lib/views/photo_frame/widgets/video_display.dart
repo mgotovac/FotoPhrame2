@@ -31,8 +31,8 @@ class _VideoDisplayState extends State<VideoDisplay> {
     try {
       await _controller.initialize();
       if (!mounted) return;
-      // Start muted
-      await _controller.setVolume(0.0);
+      final volumeProvider = Provider.of<VolumeProvider>(context, listen: false);
+      await _controller.setVolume(volumeProvider.isMuted ? 0.0 : volumeProvider.volume);
       await _controller.play();
 
       _controller.addListener(_onPlayerUpdate);

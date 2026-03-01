@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/nas_source.dart';
+import '../../../providers/slideshow_provider.dart';
+import 'folder_browser_dialog.dart';
 
 class NasSourceEditor extends StatefulWidget {
   final NasSource? source; // null for new source
@@ -22,6 +27,7 @@ class _NasSourceEditorState extends State<NasSourceEditor> {
   NasProtocol _protocol = NasProtocol.smb;
   List<NasFolder> _folders = [];
   final _folderPathController = TextEditingController();
+  final Set<int> _rescanningFolders = {};
 
   @override
   void initState() {
@@ -75,6 +81,55 @@ class _NasSourceEditorState extends State<NasSourceEditor> {
     setState(() => _folders.removeAt(index));
   }
 
+  void _toggleFolderVideos(int idx, bool value) {
+    setState(() {
+      final f = _folders[idx];
+      _folders[idx] = NasFolder(
+        path: f.path,
+        recursive: f.recursive,
+        showVideos: value,
+      );
+    });
+  }
+
+  Future<void> _browseFolder() async {
+    final source = _buildSource();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => FolderBrowserDialog(source: source),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _folders.add(NasFolder(path: result, recursive: true));
+      });
+    }
+  }
+
+  Future<void> _rescanFolder(int idx, NasFolder folder) async {
+    setState(() => _rescanningFolders.add(idx));
+    final source = _buildSource();
+    await context.read<SlideshowProvider>().rescanFolder(source, folder);
+    if (mounted) setState(() => _rescanningFolders.remove(idx));
+  }
+
+  void _save() {
+    final source = _buildSource();
+
+    final original = widget.source;
+    if (original != null) {
+      final originalByPath = {for (final f in original.folders) f.path: f};
+      final slideshowProvider = context.read<SlideshowProvider>();
+      for (final folder in _folders) {
+        final orig = originalByPath[folder.path];
+        if (orig != null && orig.showVideos != folder.showVideos) {
+          unawaited(slideshowProvider.rescanFolder(source, folder));
+        }
+      }
+    }
+
+    Navigator.pop(context, source);
+  }
+
   NasSource _buildSource() {
     return NasSource(
       id: widget.source?.id ?? const Uuid().v4(),
@@ -99,7 +154,7 @@ class _NasSourceEditorState extends State<NasSourceEditor> {
         title: Text(widget.source == null ? 'Add NAS Source' : 'Edit NAS Source'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, _buildSource()),
+            onPressed: _save,
             child: const Text('Save'),
           ),
         ],
@@ -220,6 +275,12 @@ class _NasSourceEditorState extends State<NasSourceEditor> {
               ),
               const SizedBox(width: 8),
               IconButton.filled(
+                onPressed: _browseFolder,
+                icon: const Icon(Icons.folder_open),
+                tooltip: 'Browse folders',
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
                 onPressed: _addFolder,
                 icon: const Icon(Icons.add),
               ),
@@ -232,10 +293,42 @@ class _NasSourceEditorState extends State<NasSourceEditor> {
             return ListTile(
               leading: const Icon(Icons.folder),
               title: Text(folder.path),
-              subtitle: Text(folder.recursive ? 'Recursive' : 'Top level only'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _removeFolder(idx),
+              subtitle: Row(
+                children: [
+                  Text(folder.recursive ? 'Recursive' : 'Top level only'),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Checkbox(
+                      value: folder.showVideos,
+                      onChanged: (v) => _toggleFolderVideos(idx, v!),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text('Videos', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _rescanningFolders.contains(idx)
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.sync),
+                          tooltip: 'Rescan folder',
+                          onPressed: () => _rescanFolder(idx, folder),
+                        ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _removeFolder(idx),
+                  ),
+                ],
               ),
             );
           }),

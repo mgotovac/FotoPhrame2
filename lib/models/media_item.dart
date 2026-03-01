@@ -10,6 +10,10 @@ class MediaItem {
   final int? fileSize;
   final DateTime? modified;
   String? localCachePath;
+  int? width;
+  int? height;
+
+  bool get isPortrait => width != null && height != null && height! > width!;
 
   MediaItem({
     required this.sourceId,

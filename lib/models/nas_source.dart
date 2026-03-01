@@ -3,17 +3,24 @@ enum NasProtocol { smb, webdav }
 class NasFolder {
   final String path;
   final bool recursive;
+  final bool showVideos;
 
-  const NasFolder({required this.path, this.recursive = false});
+  const NasFolder({
+    required this.path,
+    this.recursive = false,
+    this.showVideos = true,
+  });
 
   Map<String, dynamic> toJson() => {
         'path': path,
         'recursive': recursive,
+        'showVideos': showVideos,
       };
 
   factory NasFolder.fromJson(Map<String, dynamic> json) => NasFolder(
         path: json['path'] as String,
         recursive: json['recursive'] as bool? ?? false,
+        showVideos: json['showVideos'] as bool? ?? true,
       );
 }
 

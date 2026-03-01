@@ -46,25 +46,9 @@ class SettingsScreen extends StatelessWidget {
               // === Slideshow ===
               _SectionHeader(title: 'Slideshow'),
               const SizedBox(height: 8),
-              DropdownButtonFormField<int>(
-                initialValue: settings.slideshowInterval.inSeconds,
-                decoration: const InputDecoration(
-                  labelText: 'Auto-advance interval',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 10, child: Text('10 seconds')),
-                  DropdownMenuItem(value: 30, child: Text('30 seconds')),
-                  DropdownMenuItem(value: 60, child: Text('1 minute')),
-                  DropdownMenuItem(value: 120, child: Text('2 minutes')),
-                  DropdownMenuItem(value: 300, child: Text('5 minutes')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    provider
-                        .updateSlideshowInterval(Duration(seconds: value));
-                  }
-                },
+              _IntervalField(
+                value: settings.slideshowInterval,
+                onChanged: provider.updateSlideshowInterval,
               ),
               const Divider(height: 32),
 
@@ -198,6 +182,112 @@ class SettingsScreen extends StatelessWidget {
     if (result != null) {
       await provider.updateNasSource(result);
     }
+  }
+}
+
+class _IntervalField extends StatefulWidget {
+  final Duration value;
+  final ValueChanged<Duration> onChanged;
+  const _IntervalField({required this.value, required this.onChanged});
+  @override
+  State<_IntervalField> createState() => _IntervalFieldState();
+}
+
+class _IntervalFieldState extends State<_IntervalField> {
+  static const _presets = [10, 30, 60, 120, 300];
+  late final TextEditingController _ctrl;
+  late final FocusNode _focusNode;
+  int? _dropdownValue;
+
+  @override
+  void initState() {
+    super.initState();
+    final secs = widget.value.inSeconds;
+    _dropdownValue = _presets.contains(secs) ? secs : null;
+    _ctrl = TextEditingController(text: '$secs');
+    _focusNode = FocusNode()..addListener(_onFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(_IntervalField old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value) {
+      final secs = widget.value.inSeconds;
+      setState(() {
+        _dropdownValue = _presets.contains(secs) ? secs : null;
+        if (_ctrl.text != '$secs') _ctrl.text = '$secs';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) _applyText();
+  }
+
+  void _applyText() {
+    final secs = int.tryParse(_ctrl.text);
+    if (secs == null || secs <= 0) {
+      _ctrl.text = '${widget.value.inSeconds}'; // revert invalid input
+      return;
+    }
+    setState(() => _dropdownValue = _presets.contains(secs) ? secs : null);
+    widget.onChanged(Duration(seconds: secs));
+  }
+
+  void _onDropdownChanged(int? value) {
+    if (value == null) return;
+    setState(() {
+      _dropdownValue = value;
+      _ctrl.text = '$value';
+    });
+    widget.onChanged(Duration(seconds: value));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: DropdownButtonFormField<int?>(
+            value: _dropdownValue,
+            hint: const Text('Custom'),
+            decoration: const InputDecoration(
+              labelText: 'Auto-advance interval',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem<int?>(value: 10, child: Text('10 seconds')),
+              DropdownMenuItem<int?>(value: 30, child: Text('30 seconds')),
+              DropdownMenuItem<int?>(value: 60, child: Text('1 minute')),
+              DropdownMenuItem<int?>(value: 120, child: Text('2 minutes')),
+              DropdownMenuItem<int?>(value: 300, child: Text('5 minutes')),
+            ],
+            onChanged: _onDropdownChanged,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: TextField(
+            controller: _ctrl,
+            focusNode: _focusNode,
+            decoration: const InputDecoration(
+              labelText: 'Seconds',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            onSubmitted: (_) => _applyText(),
+          ),
+        ),
+      ],
+    );
   }
 }
 

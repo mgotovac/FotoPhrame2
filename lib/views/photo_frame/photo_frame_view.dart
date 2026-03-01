@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/media_item.dart';
 import '../../providers/slideshow_provider.dart';
 import '../../providers/settings_provider.dart';
+import 'widgets/dual_portrait_display.dart';
 import 'widgets/photo_display.dart';
 import 'widgets/video_display.dart';
 import 'widgets/media_controls_overlay.dart';
@@ -108,12 +109,26 @@ class _PhotoFrameViewState extends State<PhotoFrameView> {
           );
         }
 
+        final companion = slideshow.companionItem;
+
+        // Trigger caching for companion if needed
+        if (companion != null && !companion.isCached) {
+          final compSource = _findSource(companion);
+          if (compSource != null) slideshow.ensureCached(companion, compSource.source);
+        }
+
         return MediaControlsOverlay(
           onNext: slideshow.next,
           onPrevious: slideshow.previous,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 800),
-            child: _buildMediaDisplay(item),
+            child: companion != null && companion.isCached
+                ? DualPortraitDisplay(
+                    key: ValueKey('${item.remotePath}+${companion.remotePath}'),
+                    primary: item,
+                    companion: companion,
+                  )
+                : _buildMediaDisplay(item),
           ),
         );
       },
