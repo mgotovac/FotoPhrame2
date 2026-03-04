@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
@@ -9,6 +8,8 @@ import 'widgets/weather_widget.dart';
 import 'widgets/air_quality_widget.dart';
 import 'widgets/water_quality_widget.dart';
 import 'widgets/calendar_widget.dart';
+import '../photo_frame/widgets/dual_landscape_display.dart';
+import '../photo_frame/widgets/photo_display.dart';
 
 class SmartMirrorView extends StatelessWidget {
   const SmartMirrorView({super.key});
@@ -124,17 +125,24 @@ class _MirrorPhotoPreview extends StatelessWidget {
             ),
           );
         }
-        return Image.file(
-          File(item.localCachePath!),
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (context, error, stack) => Container(
-            color: Colors.white.withValues(alpha: 0.05),
-            child: const Center(
-              child: Icon(Icons.broken_image, color: Colors.white12, size: 48),
-            ),
-          ),
+
+        final companion = slideshow.companionItem;
+        final showDualLandscape = !item.isPortrait &&
+            companion != null &&
+            companion.isCached &&
+            companion.type == MediaType.image;
+
+        if (showDualLandscape) {
+          return DualLandscapeDisplay(
+            key: ValueKey('${item.remotePath}+${companion.remotePath}'),
+            primary: item,
+            companion: companion,
+          );
+        }
+
+        return PhotoDisplay(
+          key: ValueKey(item.remotePath),
+          filePath: item.localCachePath!,
         );
       },
     );
