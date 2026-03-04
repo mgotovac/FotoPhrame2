@@ -232,6 +232,18 @@ class WeatherWidget extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(Icons.air, size: 10, color: Colors.white38),
+            const SizedBox(width: 1),
+            Text(
+              '${period.windSpeed.toStringAsFixed(1)}m/s',
+              style: const TextStyle(color: Colors.white38, fontSize: 10),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Icon(Icons.umbrella, size: 10, color: Colors.lightBlue.shade100),
             const SizedBox(width: 1),
             Text(

@@ -3,8 +3,9 @@ class WeatherPeriod {
   final double low;
   final double high;
   final String iconCode;
-  final double pop;       // max probability of precipitation across entries (0–1)
-  final double precipMm;  // total rain+snow mm summed across entries
+  final double pop;        // max probability of precipitation across entries (0–1)
+  final double precipMm;   // total rain+snow mm summed across entries
+  final double windSpeed;  // average wind speed across entries (m/s)
 
   const WeatherPeriod({
     required this.label,
@@ -13,6 +14,7 @@ class WeatherPeriod {
     required this.iconCode,
     required this.pop,
     required this.precipMm,
+    required this.windSpeed,
   });
 }
 
@@ -125,6 +127,10 @@ class WeatherData {
             ((e['rain'] as Map?)?['3h'] as num? ?? 0).toDouble() +
             ((e['snow'] as Map?)?['3h'] as num? ?? 0).toDouble());
 
+        final avgWindSpeed = entries
+            .map((e) => ((e['wind'] as Map)['speed'] as num).toDouble())
+            .fold(0.0, (a, b) => a + b) / entries.length;
+
         result.add(WeatherPeriod(
           label: partDefs[p].$1,
           low: low,
@@ -132,6 +138,7 @@ class WeatherData {
           iconCode: icon,
           pop: maxPop,
           precipMm: totalPrecipMm,
+          windSpeed: avgWindSpeed,
         ));
         if (result.length == 4) break outer;
       }
