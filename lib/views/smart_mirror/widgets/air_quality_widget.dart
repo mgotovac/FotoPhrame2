@@ -3,15 +3,17 @@ import 'package:provider/provider.dart';
 import '../../../providers/air_quality_provider.dart';
 
 class AirQualityWidget extends StatelessWidget {
-  const AirQualityWidget({super.key});
+  final bool compact;
+  const AirQualityWidget({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AirQualityProvider>(
       builder: (context, provider, _) {
         if (provider.isLoading && provider.data == null) {
-          return const _AqCard(
-            child: Center(
+          return _AqCard(
+            compact: compact,
+            child: const Center(
               child: CircularProgressIndicator(color: Colors.white54),
             ),
           );
@@ -19,16 +21,21 @@ class AirQualityWidget extends StatelessWidget {
 
         if (provider.error != null && provider.data == null) {
           return _AqCard(
+            compact: compact,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.warning_amber,
-                      color: Colors.white38, size: 32),
+                  Icon(Icons.warning_amber,
+                      color: Colors.white38, size: compact ? 20 : 32),
                   const SizedBox(height: 8),
-                  Text('Air quality unavailable',
-                      style:
-                          TextStyle(color: Colors.white.withValues(alpha: 0.4))),
+                  Text(
+                    compact ? 'AQ unavailable' : 'Air quality unavailable',
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: compact ? 11 : 14),
+                  ),
                 ],
               ),
             ),
@@ -38,17 +45,90 @@ class AirQualityWidget extends StatelessWidget {
         final data = provider.data;
         if (data == null) {
           return _AqCard(
+            compact: compact,
             child: Center(
               child: Text(
                 'Configure IQAir API key\nin settings',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: compact ? 11 : 14),
               ),
             ),
           );
         }
 
         final aqiColor = Color(data.colorValue);
+
+        if (compact) {
+          return _AqCard(
+            compact: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.air, color: Colors.white54, size: 16),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Air Quality',
+                      style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${data.aqiUs}',
+                      style: TextStyle(
+                        color: aqiColor,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        'AQI',
+                        style: TextStyle(color: aqiColor, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: aqiColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    data.category,
+                    style: TextStyle(color: aqiColor, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (data.aqiUs / 500).clamp(0.0, 1.0),
+                    backgroundColor: Colors.white12,
+                    valueColor: AlwaysStoppedAnimation<Color>(aqiColor),
+                    minHeight: 5,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
 
         return _AqCard(
           child: Column(
@@ -71,7 +151,6 @@ class AirQualityWidget extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // AQI number with color
                   Text(
                     '${data.aqiUs}',
                     style: TextStyle(
@@ -91,7 +170,6 @@ class AirQualityWidget extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              // Category badge
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -105,7 +183,6 @@ class AirQualityWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              // AQI gauge bar
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
@@ -118,8 +195,8 @@ class AirQualityWidget extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'Main pollutant: ${_pollutantName(data.mainPollutant)}',
-                style:
-                    TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4), fontSize: 12),
               ),
             ],
           ),
@@ -150,12 +227,13 @@ class AirQualityWidget extends StatelessWidget {
 
 class _AqCard extends StatelessWidget {
   final Widget child;
-  const _AqCard({required this.child});
+  final bool compact;
+  const _AqCard({required this.child, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(compact ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),

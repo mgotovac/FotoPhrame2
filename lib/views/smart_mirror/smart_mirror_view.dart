@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/slideshow_provider.dart';
+import '../../models/media_item.dart';
 import 'widgets/clock_widget.dart';
 import 'widgets/weather_widget.dart';
 import 'widgets/air_quality_widget.dart';
@@ -34,14 +37,26 @@ class SmartMirrorView extends StatelessWidget {
 
   Widget _buildLandscape(bool showWaterQuality) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Left side: Clock + Weather
+        // Left side: Clock+AQ row + Weather + Calendar
         Expanded(
           flex: 5,
           child: Column(
             children: [
-              const ClockWidget(),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: const [
+                    Expanded(child: ClockWidget()),
+                    SizedBox(width: 16),
+                    SizedBox(
+                      width: 160,
+                      child: AirQualityWidget(compact: true),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 24),
               const WeatherWidget(),
               const SizedBox(height: 16),
@@ -50,18 +65,12 @@ class SmartMirrorView extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 24),
-        // Right side: Air Quality + Water Quality
+        // Right side: photo preview
         Expanded(
           flex: 4,
-          child: Column(
-            children: [
-              const AirQualityWidget(),
-              if (showWaterQuality) ...[
-                const SizedBox(height: 16),
-                const WaterQualityWidget(),
-              ],
-              const Spacer(),
-            ],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: const _MirrorPhotoPreview(),
           ),
         ),
       ],
@@ -72,25 +81,62 @@ class SmartMirrorView extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: [
-          const ClockWidget(),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: const [
+                Expanded(child: ClockWidget()),
+                SizedBox(width: 16),
+                SizedBox(
+                  width: 160,
+                  child: AirQualityWidget(compact: true),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
           const WeatherWidget(),
-          const SizedBox(height: 16),
-          if (showWaterQuality)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Expanded(child: AirQualityWidget()),
-                const SizedBox(width: 16),
-                const Expanded(child: WaterQualityWidget()),
-              ],
-            )
-          else
-            const AirQualityWidget(),
+          if (showWaterQuality) ...[
+            const SizedBox(height: 16),
+            const WaterQualityWidget(),
+          ],
           const SizedBox(height: 16),
           const CalendarWidget(),
         ],
       ),
+    );
+  }
+}
+
+class _MirrorPhotoPreview extends StatelessWidget {
+  const _MirrorPhotoPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SlideshowProvider>(
+      builder: (context, slideshow, _) {
+        final item = slideshow.currentItem;
+        if (item == null || !item.isCached || item.type != MediaType.image) {
+          return Container(
+            color: Colors.white.withValues(alpha: 0.05),
+            child: const Center(
+              child: Icon(Icons.photo, color: Colors.white12, size: 48),
+            ),
+          );
+        }
+        return Image.file(
+          File(item.localCachePath!),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (context, error, stack) => Container(
+            color: Colors.white.withValues(alpha: 0.05),
+            child: const Center(
+              child: Icon(Icons.broken_image, color: Colors.white12, size: 48),
+            ),
+          ),
+        );
+      },
     );
   }
 }
