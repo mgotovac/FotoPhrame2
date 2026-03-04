@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../models/weather_data.dart';
 import '../../../providers/weather_provider.dart';
 
 class WeatherWidget extends StatelessWidget {
@@ -57,58 +58,95 @@ class WeatherWidget extends StatelessWidget {
         }
 
         return _WeatherCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Weather icon
-                  _buildWeatherIcon(data.iconCode),
-                  const SizedBox(width: 12),
-                  // Temperature
-                  Column(
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${data.temperature.round()}°C',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 42,
-                          fontWeight: FontWeight.w200,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Weather icon
+                          _buildWeatherIcon(data.iconCode),
+                          const SizedBox(width: 12),
+                          // Temperature
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${data.temperature.round()}°C',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.w200,
+                                ),
+                              ),
+                              Text(
+                                data.description[0].toUpperCase() +
+                                    data.description.substring(1),
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Text(
-                        data.description[0].toUpperCase() +
-                            data.description.substring(1),
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 16),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _buildDetail(Icons.thermostat, 'Feels like',
+                              '${data.feelsLike.round()}°C'),
+                          const SizedBox(width: 12),
+                          _buildDetail(Icons.water_drop, 'Humidity',
+                              '${data.humidity}%'),
+                          const SizedBox(width: 12),
+                          _buildDetail(Icons.air, 'Wind',
+                              '${data.windSpeed.toStringAsFixed(1)} m/s'),
+                          const SizedBox(width: 12),
+                          _buildDetail(
+                            Icons.umbrella,
+                            'Precip',
+                            data.precipMm > 0
+                                ? '${data.precipMm.toStringAsFixed(1)} mm'
+                                : '${(data.pop * 100).round()}%',
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                ),
+                if (data.periods.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Container(
+                      width: 1,
+                      height: double.infinity,
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: data.periods
+                          .map((p) => Expanded(child: _buildPeriodColumn(p)))
+                          .toList(),
+                    ),
+                  ),
                 ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildDetail(Icons.thermostat, 'Feels like',
-                      '${data.feelsLike.round()}°C'),
-                  const SizedBox(width: 24),
-                  _buildDetail(
-                      Icons.water_drop, 'Humidity', '${data.humidity}%'),
-                  const SizedBox(width: 24),
-                  _buildDetail(Icons.air, 'Wind',
-                      '${data.windSpeed.toStringAsFixed(1)} m/s'),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildWeatherIcon(String iconCode) {
+  Widget _buildWeatherIcon(String iconCode, {double size = 56}) {
     // Map OpenWeather icon codes to Material icons
     IconData icon;
     Color color;
@@ -160,13 +198,58 @@ class WeatherWidget extends StatelessWidget {
       color = color.withValues(alpha: 0.7);
     }
 
-    return Icon(icon, size: 56, color: color);
+    return Icon(icon, size: size, color: color);
+  }
+
+  Widget _buildPeriodColumn(WeatherPeriod period) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(period.label,
+            style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        const SizedBox(height: 4),
+        _buildWeatherIcon(period.iconCode, size: 22),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.keyboard_arrow_up,
+                size: 12, color: Colors.orange.shade200),
+            Text('${period.high.round()}°',
+                style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          ],
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.keyboard_arrow_down,
+                size: 12, color: Colors.lightBlue.shade200),
+            Text('${period.low.round()}°',
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.umbrella, size: 10, color: Colors.lightBlue.shade100),
+            const SizedBox(width: 1),
+            Text(
+              period.precipMm > 0
+                  ? '${period.precipMm.toStringAsFixed(1)}mm'
+                  : '${(period.pop * 100).round()}%',
+              style: const TextStyle(color: Colors.white38, fontSize: 10),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildDetail(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, color: Colors.white38, size: 16),
+        Icon(icon, color: Colors.white38, size: 14),
         const SizedBox(width: 4),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,7 +257,7 @@ class WeatherWidget extends StatelessWidget {
             Text(label,
                 style: const TextStyle(color: Colors.white38, fontSize: 10)),
             Text(value,
-                style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                style: const TextStyle(color: Colors.white70, fontSize: 12)),
           ],
         ),
       ],

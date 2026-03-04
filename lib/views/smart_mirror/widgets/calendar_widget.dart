@@ -74,25 +74,27 @@ class _DayTable extends StatelessWidget {
       if (idx >= 0 && idx < 5) byDay[idx].add(event);
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (int i = 0; i < 5; i++) ...[
-          Expanded(
-            child: _DayColumn(
-              date: today.add(Duration(days: i)),
-              events: byDay[i],
-              isToday: i == 0,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < 5; i++) ...[
+            Expanded(
+              child: _DayColumn(
+                date: today.add(Duration(days: i)),
+                events: byDay[i],
+                isToday: i == 0,
+              ),
             ),
-          ),
-          if (i < 4)
-            Container(
-              width: 1,
-              height: double.infinity,
-              color: Colors.white.withValues(alpha: 0.08),
-            ),
+            if (i < 4)
+              Container(
+                width: 1,
+                height: double.infinity,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

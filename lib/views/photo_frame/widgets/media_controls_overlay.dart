@@ -15,6 +15,7 @@ class MediaControlsOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      fit: StackFit.expand,
       children: [
         child,
         // Left half - previous
