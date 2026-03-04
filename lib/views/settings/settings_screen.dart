@@ -140,6 +140,14 @@ class SettingsScreen extends StatelessWidget {
               // === Water Quality ===
               _SectionHeader(title: 'Water Quality'),
               const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Show Water Quality widget'),
+                value: settings.showWaterQuality,
+                onChanged: (val) =>
+                    provider.updateShowWaterQuality(val ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
               WaterQualityFieldConfig(
                 config: settings.waterQualityConfig,
                 onChanged: (config) =>

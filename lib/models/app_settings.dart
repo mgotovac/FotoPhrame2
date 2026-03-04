@@ -15,6 +15,7 @@ class AppSettings {
   final String iqAirState;
   final String iqAirCountry;
   final WaterQualityConfig? waterQualityConfig;
+  final bool showWaterQuality;
   final List<CalendarConfig> calendarConfigs;
 
   const AppSettings({
@@ -28,6 +29,7 @@ class AppSettings {
     this.iqAirState = kDefaultState,
     this.iqAirCountry = kDefaultCountry,
     this.waterQualityConfig,
+    this.showWaterQuality = false,
     this.calendarConfigs = const [],
   });
 
@@ -42,6 +44,7 @@ class AppSettings {
     String? iqAirState,
     String? iqAirCountry,
     WaterQualityConfig? waterQualityConfig,
+    bool? showWaterQuality,
     List<CalendarConfig>? calendarConfigs,
     bool clearOpenWeatherApiKey = false,
     bool clearIqAirApiKey = false,
@@ -64,6 +67,7 @@ class AppSettings {
         waterQualityConfig: clearWaterQualityConfig
             ? null
             : (waterQualityConfig ?? this.waterQualityConfig),
+        showWaterQuality: showWaterQuality ?? this.showWaterQuality,
         calendarConfigs: calendarConfigs ?? this.calendarConfigs,
       );
 
@@ -78,6 +82,7 @@ class AppSettings {
         'iqAirState': iqAirState,
         'iqAirCountry': iqAirCountry,
         'waterQualityConfig': waterQualityConfig?.toJson(),
+        'showWaterQuality': showWaterQuality,
         'calendarConfigs': calendarConfigs.map((c) => c.toJson()).toList(),
       };
 
@@ -103,6 +108,7 @@ class AppSettings {
             ? WaterQualityConfig.fromJson(
                 json['waterQualityConfig'] as Map<String, dynamic>)
             : null,
+        showWaterQuality: json['showWaterQuality'] as bool? ?? false,
         calendarConfigs: _migrateCalendarConfigs(json),
       );
 

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/slideshow_provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/air_quality_provider.dart';
-import '../providers/water_quality_provider.dart';
 import '../providers/calendar_provider.dart';
 import 'photo_frame/photo_frame_view.dart';
 import 'smart_mirror/smart_mirror_view.dart';

@@ -79,6 +79,11 @@ class SettingsProvider extends ChangeNotifier {
     await _save();
   }
 
+  Future<void> updateShowWaterQuality(bool show) async {
+    _settings = _settings.copyWith(showWaterQuality: show);
+    await _save();
+  }
+
   Future<void> addCalendarConfig(CalendarConfig config) async {
     final configs = List<CalendarConfig>.from(_settings.calendarConfigs)
       ..add(config);

@@ -136,14 +136,14 @@ class _PhotoFrameViewState extends State<PhotoFrameView> {
             duration: const Duration(milliseconds: 800),
             child: showDualPortrait
                 ? DualPortraitDisplay(
-                    key: ValueKey('${item.remotePath}+${companion!.remotePath}'),
+                    key: ValueKey('${item.remotePath}+${companion.remotePath}'),
                     primary: item,
                     companion: companion,
                   )
                 : showDualLandscape
                     ? DualLandscapeDisplay(
                         key: ValueKey(
-                            '${item.remotePath}+${companion!.remotePath}'),
+                            '${item.remotePath}+${companion.remotePath}'),
                         primary: item,
                         companion: companion,
                       )
