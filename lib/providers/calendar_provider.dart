@@ -21,14 +21,18 @@ class CalendarProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get hasConfig => _configs.isNotEmpty;
+  List<CalendarConfig> get configs => _configs;
 
   void onSettingsChanged(AppSettings settings) {
-    final oldSet = _configs.map((c) => '${c.id}:${c.icsUrl}').toSet();
-    final newSet =
+    final oldIcsSet = _configs.map((c) => '${c.id}:${c.icsUrl}').toSet();
+    final newIcsSet =
         settings.calendarConfigs.map((c) => '${c.id}:${c.icsUrl}').toSet();
+    final oldColorSet = _configs.map((c) => '${c.id}:${c.color}').toSet();
+    final newColorSet =
+        settings.calendarConfigs.map((c) => '${c.id}:${c.color}').toSet();
     _configs = settings.calendarConfigs;
 
-    if (oldSet != newSet) {
+    if (oldIcsSet != newIcsSet) {
       if (_configs.isNotEmpty) {
         fetch();
         _startPeriodicRefresh();
@@ -37,6 +41,8 @@ class CalendarProvider extends ChangeNotifier {
         _refreshTimer?.cancel();
         notifyListeners();
       }
+    } else if (oldColorSet != newColorSet) {
+      notifyListeners();
     }
   }
 

@@ -52,7 +52,12 @@ class CalendarWidget extends StatelessWidget {
           );
         }
 
-        return _CalCard(child: _DayTable(events: provider.events));
+        final colorById = {
+          for (final c in provider.configs) c.id: Color(c.color),
+        };
+        return _CalCard(
+          child: _DayTable(events: provider.events, colorById: colorById),
+        );
       },
     );
   }
@@ -60,7 +65,8 @@ class CalendarWidget extends StatelessWidget {
 
 class _DayTable extends StatelessWidget {
   final List<CalendarEvent> events;
-  const _DayTable({required this.events});
+  final Map<String, Color> colorById;
+  const _DayTable({required this.events, required this.colorById});
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +89,7 @@ class _DayTable extends StatelessWidget {
               date: today.add(Duration(days: i)),
               events: byDay[i],
               isToday: i == 0,
+              colorById: colorById,
             ),
           ),
           if (i < 4)
@@ -97,11 +104,13 @@ class _DayColumn extends StatefulWidget {
   final DateTime date;
   final List<CalendarEvent> events;
   final bool isToday;
+  final Map<String, Color> colorById;
 
   const _DayColumn({
     required this.date,
     required this.events,
     required this.isToday,
+    required this.colorById,
   });
 
   @override
@@ -188,7 +197,11 @@ class _DayColumnState extends State<_DayColumn> {
                         for (final event in widget.events)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 6),
-                            child: _EventChip(event: event, isToday: widget.isToday),
+                            child: _EventChip(
+                              event: event,
+                              isToday: widget.isToday,
+                              color: widget.colorById[event.calendarId],
+                            ),
                           ),
                     ],
                   ),
@@ -221,31 +234,50 @@ class _DayColumnState extends State<_DayColumn> {
 class _EventChip extends StatelessWidget {
   final CalendarEvent event;
   final bool isToday;
-  const _EventChip({required this.event, required this.isToday});
+  final Color? color;
+  const _EventChip({required this.event, required this.isToday, this.color});
 
   @override
   Widget build(BuildContext context) {
     final timeStr =
         event.isAllDay ? 'All day' : DateFormat('HH:mm').format(event.start);
+    final dotColor = color ?? Colors.white54;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          event.title,
-          style: TextStyle(
-            color: isToday ? Colors.white : Colors.white.withValues(alpha: 0.8),
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              margin: const EdgeInsets.only(top: 2, right: 4),
+              decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+            ),
+            Expanded(
+              child: Text(
+                event.title,
+                style: TextStyle(
+                  color:
+                      isToday ? Colors.white : Colors.white.withValues(alpha: 0.8),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
-        Text(
-          timeStr,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
-            fontSize: 10,
+        Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: Text(
+            timeStr,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 10,
+            ),
           ),
         ),
       ],

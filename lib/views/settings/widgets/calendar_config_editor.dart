@@ -17,6 +17,7 @@ class CalendarConfigEditor extends StatefulWidget {
 class _CalendarConfigEditorState extends State<CalendarConfigEditor> {
   late TextEditingController _nameController;
   late TextEditingController _icsUrlController;
+  late int _selectedColor;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _CalendarConfigEditorState extends State<CalendarConfigEditor> {
         TextEditingController(text: widget.initial?.name ?? '');
     _icsUrlController =
         TextEditingController(text: widget.initial?.icsUrl ?? '');
+    _selectedColor = widget.initial?.color ?? kCalendarColorPalette.first;
   }
 
   @override
@@ -43,6 +45,7 @@ class _CalendarConfigEditorState extends State<CalendarConfigEditor> {
       id: widget.initial?.id ?? const Uuid().v4(),
       name: name,
       icsUrl: icsUrl,
+      color: _selectedColor,
     );
     Navigator.of(context).pop(config);
   }
@@ -81,6 +84,33 @@ class _CalendarConfigEditorState extends State<CalendarConfigEditor> {
               border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.url,
+          ),
+          const SizedBox(height: 16),
+          const Text('Color', style: TextStyle(fontSize: 12, color: Colors.white54)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final c in kCalendarColorPalette)
+                GestureDetector(
+                  onTap: () => setState(() => _selectedColor = c),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Color(c),
+                      shape: BoxShape.circle,
+                      border: _selectedColor == c
+                          ? Border.all(color: Colors.white, width: 2.5)
+                          : null,
+                    ),
+                    child: _selectedColor == c
+                        ? const Icon(Icons.check, color: Colors.black, size: 16)
+                        : null,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
           Text(

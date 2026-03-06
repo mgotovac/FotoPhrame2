@@ -4,6 +4,7 @@ class CalendarEvent {
   final DateTime start;
   final DateTime end;
   final bool isAllDay;
+  final String calendarId;
 
   const CalendarEvent({
     required this.id,
@@ -11,6 +12,6 @@ class CalendarEvent {
     required this.start,
     required this.end,
     required this.isAllDay,
+    required this.calendarId,
   });
-
 }

@@ -25,7 +25,7 @@ class CalendarService {
     final cutoff = today.add(const Duration(days: 5));
 
     final result = <CalendarEvent>[];
-    for (final (base, rrule) in _parseIcs(response.body)) {
+    for (final (base, rrule) in _parseIcs(response.body, config.id)) {
       if (rrule != null) {
         result.addAll(_expandRrule(base, rrule, today, cutoff));
       } else if (!base.start.isBefore(today) && base.start.isBefore(cutoff)) {
@@ -36,7 +36,7 @@ class CalendarService {
   }
 
   // Returns (event, rrule?) for every VEVENT in the ICS.
-  List<(CalendarEvent, String?)> _parseIcs(String ics) {
+  List<(CalendarEvent, String?)> _parseIcs(String ics, String calendarId) {
     // Unfold continuation lines (RFC 5545 §3.1)
     final unfolded = ics
         .replaceAll('\r\n ', '')
@@ -55,7 +55,7 @@ class CalendarService {
       if (line == 'BEGIN:VEVENT') {
         current = {};
       } else if (line == 'END:VEVENT' && current != null) {
-        final pair = _buildEvent(current);
+        final pair = _buildEvent(current, calendarId);
         if (pair != null) results.add(pair);
         current = null;
       } else if (current != null) {
@@ -74,7 +74,7 @@ class CalendarService {
     return results;
   }
 
-  (CalendarEvent, String?)? _buildEvent(Map<String, String> props) {
+  (CalendarEvent, String?)? _buildEvent(Map<String, String> props, String calendarId) {
     final uid = props['UID'] ?? '';
     final title = props['SUMMARY'] ?? '(No title)';
     final dtStart = props['DTSTART'];
@@ -98,6 +98,7 @@ class CalendarService {
       start: start,
       end: end,
       isAllDay: isAllDay,
+      calendarId: calendarId,
     );
     return (event, props['RRULE']);
   }
@@ -189,6 +190,7 @@ class CalendarService {
         start: s,
         end: s.add(duration),
         isAllDay: base.isAllDay,
+        calendarId: base.calendarId,
       );
     }
 
