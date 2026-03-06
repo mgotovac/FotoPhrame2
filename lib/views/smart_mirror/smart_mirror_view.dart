@@ -132,17 +132,29 @@ class _MirrorPhotoPreview extends StatelessWidget {
             companion.isCached &&
             companion.type == MediaType.image;
 
-        if (showDualLandscape) {
-          return DualLandscapeDisplay(
-            key: ValueKey('${item.remotePath}+${companion.remotePath}'),
-            primary: item,
-            companion: companion,
-          );
-        }
+        final photo = showDualLandscape
+            ? DualLandscapeDisplay(
+                key: ValueKey('${item.remotePath}+${companion.remotePath}'),
+                primary: item,
+                companion: companion,
+              )
+            : PhotoDisplay(
+                key: ValueKey(item.remotePath),
+                filePath: item.localCachePath!,
+              );
 
-        return PhotoDisplay(
-          key: ValueKey(item.remotePath),
-          filePath: item.localCachePath!,
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 1200),
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
+              ),
+              child: child,
+            );
+          },
+          child: photo,
         );
       },
     );

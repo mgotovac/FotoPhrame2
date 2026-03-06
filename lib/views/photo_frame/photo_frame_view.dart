@@ -133,7 +133,16 @@ class _PhotoFrameViewState extends State<PhotoFrameView> {
             // preventing the in-progress fade from rendering the old layout
             // widget under the new orientation constraints (distortion).
             key: ValueKey(isLandscape),
-            duration: const Duration(milliseconds: 800),
+            duration: const Duration(milliseconds: 1200),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
+                ),
+                child: child,
+              );
+            },
             child: showDualPortrait
                 ? DualPortraitDisplay(
                     key: ValueKey('${item.remotePath}+${companion.remotePath}'),
