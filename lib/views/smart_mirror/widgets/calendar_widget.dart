@@ -74,32 +74,26 @@ class _DayTable extends StatelessWidget {
       if (idx >= 0 && idx < 5) byDay[idx].add(event);
     }
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (int i = 0; i < 5; i++) ...[
-            Expanded(
-              child: _DayColumn(
-                date: today.add(Duration(days: i)),
-                events: byDay[i],
-                isToday: i == 0,
-              ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (int i = 0; i < 5; i++) ...[
+          Expanded(
+            child: _DayColumn(
+              date: today.add(Duration(days: i)),
+              events: byDay[i],
+              isToday: i == 0,
             ),
-            if (i < 4)
-              Container(
-                width: 1,
-                height: double.infinity,
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
-          ],
+          ),
+          if (i < 4)
+            Container(width: 1, color: Colors.white.withValues(alpha: 0.08)),
         ],
-      ),
+      ],
     );
   }
 }
 
-class _DayColumn extends StatelessWidget {
+class _DayColumn extends StatefulWidget {
   final DateTime date;
   final List<CalendarEvent> events;
   final bool isToday;
@@ -111,48 +105,113 @@ class _DayColumn extends StatelessWidget {
   });
 
   @override
+  State<_DayColumn> createState() => _DayColumnState();
+}
+
+class _DayColumnState extends State<_DayColumn> {
+  final _scrollController = ScrollController();
+  bool _canScrollDown = false;
+  bool _canScrollUp = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onScroll());
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    final down = pos.maxScrollExtent > 0 && pos.pixels < pos.maxScrollExtent;
+    final up = pos.pixels > 0;
+    if (down != _canScrollDown || up != _canScrollUp) {
+      setState(() {
+        _canScrollDown = down;
+        _canScrollUp = up;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          // Day header
+          // Day header (fixed height)
           Text(
-            DateFormat('EEE').format(date).toUpperCase(),
+            DateFormat('EEE').format(widget.date).toUpperCase(),
             style: TextStyle(
-              color: isToday ? Colors.blue : Colors.white54,
+              color: widget.isToday ? Colors.blue : Colors.white54,
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
           ),
           Text(
-            DateFormat('d').format(date),
+            DateFormat('d').format(widget.date),
             style: TextStyle(
-              color: isToday ? Colors.white : Colors.white70,
+              color: widget.isToday ? Colors.white : Colors.white70,
               fontSize: 20,
-              fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+              fontWeight: widget.isToday ? FontWeight.w700 : FontWeight.w400,
               height: 1.1,
             ),
           ),
           const SizedBox(height: 6),
           Container(height: 1, color: Colors.white.withValues(alpha: 0.12)),
           const SizedBox(height: 6),
-          // Events
-          if (events.isEmpty)
-            Text(
-              '–',
-              style:
-                  TextStyle(color: Colors.white.withValues(alpha: 0.2), fontSize: 12),
-            )
-          else
-            for (final event in events)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: _EventChip(event: event, isToday: isToday),
-              ),
+          // Events — scrollable, shows all events
+          Expanded(
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.events.isEmpty)
+                        Text(
+                          '–',
+                          style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.2), fontSize: 12),
+                        )
+                      else
+                        for (final event in widget.events)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: _EventChip(event: event, isToday: widget.isToday),
+                          ),
+                    ],
+                  ),
+                ),
+                if (_canScrollUp)
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    child: Icon(Icons.keyboard_arrow_up,
+                        color: Colors.white38, size: 16),
+                  ),
+                if (_canScrollDown)
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Icon(Icons.keyboard_arrow_down,
+                        color: Colors.white38, size: 16),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
