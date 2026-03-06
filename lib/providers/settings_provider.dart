@@ -105,4 +105,19 @@ class SettingsProvider extends ChangeNotifier {
     _settings = _settings.copyWith(calendarConfigs: configs);
     await _save();
   }
+
+  Future<void> updateNightDimming({
+    bool? enabled,
+    double? level,
+    int? startHour,
+    int? endHour,
+  }) async {
+    _settings = _settings.copyWith(
+      nightDimmingEnabled: enabled,
+      nightDimmingLevel: level,
+      nightDimmingStartHour: startHour,
+      nightDimmingEndHour: endHour,
+    );
+    await _save();
+  }
 }

@@ -193,6 +193,74 @@ class SettingsScreen extends StatelessWidget {
                       ],
                     ),
                   )),
+              const Divider(height: 32),
+
+              // === Night Dimming ===
+              _SectionHeader(title: 'Night Dimming'),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Dim screen during night hours'),
+                value: settings.nightDimmingEnabled,
+                onChanged: (val) => provider.updateNightDimming(
+                  enabled: val ?? false,
+                ),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              if (settings.nightDimmingEnabled) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _HourDropdown(
+                        label: 'From',
+                        value: settings.nightDimmingStartHour,
+                        onChanged: (h) =>
+                            provider.updateNightDimming(startHour: h),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _HourDropdown(
+                        label: 'Until',
+                        value: settings.nightDimmingEndHour,
+                        onChanged: (h) =>
+                            provider.updateNightDimming(endHour: h),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Text('Brightness:',
+                        style: TextStyle(fontSize: 14)),
+                    Expanded(
+                      child: Slider(
+                        value: settings.nightDimmingLevel,
+                        min: 0.0,
+                        max: 1.0,
+                        divisions: 20,
+                        label: settings.nightDimmingLevel == 0.0
+                            ? 'Off'
+                            : '${(settings.nightDimmingLevel * 100).round()}%',
+                        onChanged: (val) =>
+                            provider.updateNightDimming(level: val),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 48,
+                      child: Text(
+                        settings.nightDimmingLevel == 0.0
+                            ? 'Off'
+                            : '${(settings.nightDimmingLevel * 100).round()}%',
+                        style: const TextStyle(fontSize: 13),
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 32),
             ],
           );
@@ -406,6 +474,43 @@ class _NasSourceTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HourDropdown extends StatelessWidget {
+  final String label;
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  const _HourDropdown({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  static String _format(int hour) {
+    if (hour == 0) return '12:00 AM';
+    if (hour < 12) return '$hour:00 AM';
+    if (hour == 12) return '12:00 PM';
+    return '${hour - 12}:00 PM';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<int>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      items: List.generate(
+        24,
+        (h) => DropdownMenuItem(value: h, child: Text(_format(h))),
+      ),
+      onChanged: (h) {
+        if (h != null) onChanged(h);
+      },
     );
   }
 }

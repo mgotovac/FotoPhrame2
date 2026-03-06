@@ -17,6 +17,10 @@ class AppSettings {
   final WaterQualityConfig? waterQualityConfig;
   final bool showWaterQuality;
   final List<CalendarConfig> calendarConfigs;
+  final bool nightDimmingEnabled;
+  final double nightDimmingLevel; // 0.0 = screen off, 1.0 = full brightness
+  final int nightDimmingStartHour; // 0–23
+  final int nightDimmingEndHour;   // 0–23
 
   const AppSettings({
     this.nasSources = const [],
@@ -31,6 +35,10 @@ class AppSettings {
     this.waterQualityConfig,
     this.showWaterQuality = false,
     this.calendarConfigs = const [],
+    this.nightDimmingEnabled = false,
+    this.nightDimmingLevel = 0.0,
+    this.nightDimmingStartHour = 22,
+    this.nightDimmingEndHour = 6,
   });
 
   AppSettings copyWith({
@@ -46,6 +54,10 @@ class AppSettings {
     WaterQualityConfig? waterQualityConfig,
     bool? showWaterQuality,
     List<CalendarConfig>? calendarConfigs,
+    bool? nightDimmingEnabled,
+    double? nightDimmingLevel,
+    int? nightDimmingStartHour,
+    int? nightDimmingEndHour,
     bool clearOpenWeatherApiKey = false,
     bool clearIqAirApiKey = false,
     bool clearWaterQualityConfig = false,
@@ -69,6 +81,10 @@ class AppSettings {
             : (waterQualityConfig ?? this.waterQualityConfig),
         showWaterQuality: showWaterQuality ?? this.showWaterQuality,
         calendarConfigs: calendarConfigs ?? this.calendarConfigs,
+        nightDimmingEnabled: nightDimmingEnabled ?? this.nightDimmingEnabled,
+        nightDimmingLevel: nightDimmingLevel ?? this.nightDimmingLevel,
+        nightDimmingStartHour: nightDimmingStartHour ?? this.nightDimmingStartHour,
+        nightDimmingEndHour: nightDimmingEndHour ?? this.nightDimmingEndHour,
       );
 
   Map<String, dynamic> toJson() => {
@@ -84,6 +100,10 @@ class AppSettings {
         'waterQualityConfig': waterQualityConfig?.toJson(),
         'showWaterQuality': showWaterQuality,
         'calendarConfigs': calendarConfigs.map((c) => c.toJson()).toList(),
+        'nightDimmingEnabled': nightDimmingEnabled,
+        'nightDimmingLevel': nightDimmingLevel,
+        'nightDimmingStartHour': nightDimmingStartHour,
+        'nightDimmingEndHour': nightDimmingEndHour,
       };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -110,6 +130,10 @@ class AppSettings {
             : null,
         showWaterQuality: json['showWaterQuality'] as bool? ?? false,
         calendarConfigs: _migrateCalendarConfigs(json),
+        nightDimmingEnabled: json['nightDimmingEnabled'] as bool? ?? false,
+        nightDimmingLevel: (json['nightDimmingLevel'] as num?)?.toDouble() ?? 0.0,
+        nightDimmingStartHour: json['nightDimmingStartHour'] as int? ?? 22,
+        nightDimmingEndHour: json['nightDimmingEndHour'] as int? ?? 6,
       );
 
   // Handles both new list format ('calendarConfigs') and old single format ('calendarConfig').

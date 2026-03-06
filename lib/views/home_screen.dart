@@ -4,6 +4,7 @@ import '../providers/slideshow_provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/air_quality_provider.dart';
 import '../providers/calendar_provider.dart';
+import '../widgets/night_dimming_overlay.dart';
 import 'photo_frame/photo_frame_view.dart';
 import 'smart_mirror/smart_mirror_view.dart';
 import 'settings/settings_screen.dart';
@@ -54,7 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
+      body: NightDimmingOverlay(
+      child: GestureDetector(
         onLongPress: _openSettings,
         onDoubleTap: _showSettingsIconBriefly,
         child: Stack(
@@ -94,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
+      ),
       ),
     );
   }
