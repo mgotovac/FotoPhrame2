@@ -70,6 +70,11 @@ class SettingsProvider extends ChangeNotifier {
     await _save();
   }
 
+  Future<void> updateAirQualityRefreshInterval(int minutes) async {
+    _settings = _settings.copyWith(airQualityRefreshIntervalMinutes: minutes);
+    await _save();
+  }
+
   Future<void> updateWaterQualityConfig(WaterQualityConfig? config) async {
     if (config == null) {
       _settings = _settings.copyWith(clearWaterQualityConfig: true);

@@ -14,6 +14,7 @@ class AppSettings {
   final String iqAirCity;
   final String iqAirState;
   final String iqAirCountry;
+  final int airQualityRefreshIntervalMinutes;
   final WaterQualityConfig? waterQualityConfig;
   final bool showWaterQuality;
   final List<CalendarConfig> calendarConfigs;
@@ -32,6 +33,7 @@ class AppSettings {
     this.iqAirCity = kDefaultCity,
     this.iqAirState = kDefaultState,
     this.iqAirCountry = kDefaultCountry,
+    this.airQualityRefreshIntervalMinutes = kDefaultAirQualityRefreshIntervalMinutes,
     this.waterQualityConfig,
     this.showWaterQuality = false,
     this.calendarConfigs = const [],
@@ -51,6 +53,7 @@ class AppSettings {
     String? iqAirCity,
     String? iqAirState,
     String? iqAirCountry,
+    int? airQualityRefreshIntervalMinutes,
     WaterQualityConfig? waterQualityConfig,
     bool? showWaterQuality,
     List<CalendarConfig>? calendarConfigs,
@@ -76,6 +79,7 @@ class AppSettings {
         iqAirCity: iqAirCity ?? this.iqAirCity,
         iqAirState: iqAirState ?? this.iqAirState,
         iqAirCountry: iqAirCountry ?? this.iqAirCountry,
+        airQualityRefreshIntervalMinutes: airQualityRefreshIntervalMinutes ?? this.airQualityRefreshIntervalMinutes,
         waterQualityConfig: clearWaterQualityConfig
             ? null
             : (waterQualityConfig ?? this.waterQualityConfig),
@@ -97,6 +101,7 @@ class AppSettings {
         'iqAirCity': iqAirCity,
         'iqAirState': iqAirState,
         'iqAirCountry': iqAirCountry,
+        'airQualityRefreshIntervalMinutes': airQualityRefreshIntervalMinutes,
         'waterQualityConfig': waterQualityConfig?.toJson(),
         'showWaterQuality': showWaterQuality,
         'calendarConfigs': calendarConfigs.map((c) => c.toJson()).toList(),
@@ -124,6 +129,7 @@ class AppSettings {
         iqAirCity: json['iqAirCity'] as String? ?? kDefaultCity,
         iqAirState: json['iqAirState'] as String? ?? kDefaultState,
         iqAirCountry: json['iqAirCountry'] as String? ?? kDefaultCountry,
+        airQualityRefreshIntervalMinutes: json['airQualityRefreshIntervalMinutes'] as int? ?? kDefaultAirQualityRefreshIntervalMinutes,
         waterQualityConfig: json['waterQualityConfig'] != null
             ? WaterQualityConfig.fromJson(
                 json['waterQualityConfig'] as Map<String, dynamic>)

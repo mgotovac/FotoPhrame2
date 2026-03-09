@@ -135,6 +135,12 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              _MinutesIntervalField(
+                value: settings.airQualityRefreshIntervalMinutes,
+                onChanged: (mins) =>
+                    provider.updateAirQualityRefreshInterval(mins),
+              ),
               const Divider(height: 32),
 
               // === Water Quality ===
@@ -410,6 +416,111 @@ class _IntervalFieldState extends State<_IntervalField> {
             focusNode: _focusNode,
             decoration: const InputDecoration(
               labelText: 'Seconds',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.number,
+            onSubmitted: (_) => _applyText(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MinutesIntervalField extends StatefulWidget {
+  final int value;
+  final ValueChanged<int> onChanged;
+  const _MinutesIntervalField({required this.value, required this.onChanged});
+  @override
+  State<_MinutesIntervalField> createState() => _MinutesIntervalFieldState();
+}
+
+class _MinutesIntervalFieldState extends State<_MinutesIntervalField> {
+  static const _presets = [1, 5, 10, 15, 30, 60];
+  late final TextEditingController _ctrl;
+  late final FocusNode _focusNode;
+  int? _dropdownValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _dropdownValue = _presets.contains(widget.value) ? widget.value : null;
+    _ctrl = TextEditingController(text: '${widget.value}');
+    _focusNode = FocusNode()..addListener(_onFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(_MinutesIntervalField old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value) {
+      setState(() {
+        _dropdownValue = _presets.contains(widget.value) ? widget.value : null;
+        if (_ctrl.text != '${widget.value}') _ctrl.text = '${widget.value}';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) _applyText();
+  }
+
+  void _applyText() {
+    final mins = int.tryParse(_ctrl.text);
+    if (mins == null || mins <= 0) {
+      _ctrl.text = '${widget.value}';
+      return;
+    }
+    setState(() => _dropdownValue = _presets.contains(mins) ? mins : null);
+    widget.onChanged(mins);
+  }
+
+  void _onDropdownChanged(int? value) {
+    if (value == null) return;
+    setState(() {
+      _dropdownValue = value;
+      _ctrl.text = '$value';
+    });
+    widget.onChanged(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: DropdownButtonFormField<int?>(
+            value: _dropdownValue,
+            hint: const Text('Custom'),
+            decoration: const InputDecoration(
+              labelText: 'Refresh interval',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem<int?>(value: 1, child: Text('1 minute')),
+              DropdownMenuItem<int?>(value: 5, child: Text('5 minutes')),
+              DropdownMenuItem<int?>(value: 10, child: Text('10 minutes')),
+              DropdownMenuItem<int?>(value: 15, child: Text('15 minutes')),
+              DropdownMenuItem<int?>(value: 30, child: Text('30 minutes')),
+              DropdownMenuItem<int?>(value: 60, child: Text('60 minutes')),
+            ],
+            onChanged: _onDropdownChanged,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: TextField(
+            controller: _ctrl,
+            focusNode: _focusNode,
+            decoration: const InputDecoration(
+              labelText: 'Minutes',
               border: OutlineInputBorder(),
             ),
             keyboardType: TextInputType.number,

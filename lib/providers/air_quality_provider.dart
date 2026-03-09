@@ -16,6 +16,7 @@ class AirQualityProvider extends ChangeNotifier {
   String _city = kDefaultCity;
   String _state = kDefaultState;
   String _country = kDefaultCountry;
+  int _refreshIntervalMinutes = kDefaultAirQualityRefreshIntervalMinutes;
 
   AirQualityProvider(this._service);
 
@@ -28,14 +29,16 @@ class AirQualityProvider extends ChangeNotifier {
         _city != settings.iqAirCity ||
         _state != settings.iqAirState ||
         _country != settings.iqAirCountry;
+    final intervalChanged = _refreshIntervalMinutes != settings.airQualityRefreshIntervalMinutes;
     _apiKey = settings.iqAirApiKey;
     _city = settings.iqAirCity;
     _state = settings.iqAirState;
     _country = settings.iqAirCountry;
+    _refreshIntervalMinutes = settings.airQualityRefreshIntervalMinutes;
 
-    if (_apiKey != null && _apiKey!.isNotEmpty && changed) {
-      fetch();
-      _startPeriodicRefresh();
+    if (_apiKey != null && _apiKey!.isNotEmpty) {
+      if (changed) fetch();
+      if (changed || intervalChanged) _startPeriodicRefresh();
     }
   }
 
@@ -59,7 +62,7 @@ class AirQualityProvider extends ChangeNotifier {
   void _startPeriodicRefresh() {
     _refreshTimer?.cancel();
     _refreshTimer =
-        Timer.periodic(kAirQualityRefreshInterval, (_) => fetch());
+        Timer.periodic(Duration(minutes: _refreshIntervalMinutes), (_) => fetch());
   }
 
   @override

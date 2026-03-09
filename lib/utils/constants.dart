@@ -23,7 +23,8 @@ const String kGoogleCalendarBaseUrl =
 const Duration kDefaultSlideshowInterval = Duration(seconds: 30);
 
 const Duration kWeatherRefreshInterval = Duration(minutes: kDefaultWeatherRefreshIntervalMinutes);
-const Duration kAirQualityRefreshInterval = Duration(minutes: 30);
+const int kDefaultAirQualityRefreshIntervalMinutes = 30;
+const Duration kAirQualityRefreshInterval = Duration(minutes: kDefaultAirQualityRefreshIntervalMinutes);
 const Duration kWaterQualityRefreshInterval = Duration(hours: 12);
 const Duration kCalendarRefreshInterval = Duration(minutes: 5);
 const Duration kSlideshowRescanInterval = Duration(hours: 1);

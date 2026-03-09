@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/slideshow_provider.dart';
 import '../../models/media_item.dart';
+import '../../models/nas_source.dart';
 import 'widgets/clock_widget.dart';
 import 'widgets/weather_widget.dart';
 import 'widgets/air_quality_widget.dart';
@@ -109,39 +110,75 @@ class SmartMirrorView extends StatelessWidget {
   }
 }
 
-class _MirrorPhotoPreview extends StatelessWidget {
+class _MirrorPhotoPreview extends StatefulWidget {
   const _MirrorPhotoPreview();
+
+  @override
+  State<_MirrorPhotoPreview> createState() => _MirrorPhotoPreviewState();
+}
+
+class _MirrorPhotoPreviewState extends State<_MirrorPhotoPreview> {
+  // Last successfully loaded photo widget — persists until next photo is ready
+  // so the placeholder never flashes during normal transitions.
+  Widget? _lastPhoto;
+
+  NasSource? _findSource(BuildContext context, MediaItem item) {
+    final settings = context.read<SettingsProvider>().settings;
+    try {
+      return settings.nasSources.firstWhere((s) => s.id == item.sourceId);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<SlideshowProvider>(
       builder: (context, slideshow, _) {
         final item = slideshow.currentItem;
-        if (item == null || !item.isCached || item.type != MediaType.image) {
-          return Container(
-            color: Colors.white.withValues(alpha: 0.05),
-            child: const Center(
-              child: Icon(Icons.photo, color: Colors.white12, size: 48),
-            ),
-          );
+
+        if (item != null && !item.isCached) {
+          final source = _findSource(context, item);
+          if (source != null) slideshow.ensureCached(item, source);
         }
 
-        final companion = slideshow.companionItem;
-        final showDualLandscape = !item.isPortrait &&
-            companion != null &&
-            companion.isCached &&
-            companion.type == MediaType.image;
+        final ready = item != null && item.isCached && item.type == MediaType.image;
 
-        final photo = showDualLandscape
-            ? DualLandscapeDisplay(
-                key: ValueKey('${item.remotePath}+${companion.remotePath}'),
-                primary: item,
-                companion: companion,
-              )
-            : PhotoDisplay(
-                key: ValueKey(item.remotePath),
-                filePath: item.localCachePath!,
-              );
+        if (ready) {
+          final companion = slideshow.companionItem;
+
+          if (companion != null && !companion.isCached) {
+            final source = _findSource(context, companion);
+            if (source != null) slideshow.ensureCached(companion, source);
+          }
+          final showDualLandscape = !item.isPortrait &&
+              companion != null &&
+              companion.isCached &&
+              companion.type == MediaType.image;
+
+          _lastPhoto = showDualLandscape
+              ? DualLandscapeDisplay(
+                  key: ValueKey('${item.remotePath}+${companion.remotePath}'),
+                  primary: item,
+                  companion: companion,
+                )
+              : PhotoDisplay(
+                  key: ValueKey(item.remotePath),
+                  filePath: item.localCachePath!,
+                );
+        }
+
+        // Always keep AnimatedSwitcher in the tree so its state is never lost.
+        // Show last known photo if the next one isn't cached yet; only fall
+        // back to the placeholder when there's genuinely nothing to show.
+        final child = _lastPhoto ??
+            Container(
+              key: const ValueKey('placeholder'),
+              color: Colors.white.withValues(alpha: 0.05),
+              child: const Center(
+                child: Icon(Icons.photo, color: Colors.white12, size: 48),
+              ),
+            );
 
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 1200),
@@ -154,7 +191,7 @@ class _MirrorPhotoPreview extends StatelessWidget {
               child: child,
             );
           },
-          child: photo,
+          child: child,
         );
       },
     );
