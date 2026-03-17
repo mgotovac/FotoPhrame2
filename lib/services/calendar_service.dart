@@ -28,7 +28,7 @@ class CalendarService {
     for (final (base, rrule) in _parseIcs(response.body, config.id)) {
       if (rrule != null) {
         result.addAll(_expandRrule(base, rrule, today, cutoff));
-      } else if (!base.start.isBefore(today) && base.start.isBefore(cutoff)) {
+      } else if (base.end.isAfter(today) && base.start.isBefore(cutoff)) {
         result.add(base);
       }
     }

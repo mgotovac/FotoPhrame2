@@ -76,8 +76,18 @@ class _DayTable extends StatelessWidget {
     // Group events into 5 day buckets (today … today+4)
     final byDay = List.generate(5, (_) => <CalendarEvent>[]);
     for (final event in events) {
-      final idx = event.start.difference(today).inDays;
-      if (idx >= 0 && idx < 5) byDay[idx].add(event);
+      final eventStartDay = DateTime(event.start.year, event.start.month, event.start.day);
+      final rawEndDay = DateTime(event.end.year, event.end.month, event.end.day);
+      final eventEndDay = event.isAllDay
+          ? rawEndDay.subtract(const Duration(days: 1))
+          : rawEndDay;
+
+      for (int i = 0; i < 5; i++) {
+        final day = today.add(Duration(days: i));
+        if (!day.isBefore(eventStartDay) && !day.isAfter(eventEndDay)) {
+          byDay[i].add(event);
+        }
+      }
     }
 
     return Row(
@@ -201,6 +211,7 @@ class _DayColumnState extends State<_DayColumn> {
                               event: event,
                               isToday: widget.isToday,
                               color: widget.colorById[event.calendarId],
+                              columnDate: widget.date,
                             ),
                           ),
                     ],
@@ -235,12 +246,27 @@ class _EventChip extends StatelessWidget {
   final CalendarEvent event;
   final bool isToday;
   final Color? color;
-  const _EventChip({required this.event, required this.isToday, this.color});
+  final DateTime columnDate;
+  const _EventChip({required this.event, required this.isToday, this.color, required this.columnDate});
 
   @override
   Widget build(BuildContext context) {
-    final timeStr =
-        event.isAllDay ? 'All day' : DateFormat('HH:mm').format(event.start);
+    final eventStartDay = DateTime(event.start.year, event.start.month, event.start.day);
+    final rawEndDay    = DateTime(event.end.year,   event.end.month,   event.end.day);
+    final eventEndDay  = event.isAllDay
+        ? rawEndDay.subtract(const Duration(days: 1))
+        : rawEndDay;
+
+    final String timeStr;
+    if (event.isAllDay || eventStartDay == eventEndDay) {
+      timeStr = event.isAllDay ? 'All day' : DateFormat('HH:mm').format(event.start);
+    } else if (columnDate == eventStartDay) {
+      timeStr = DateFormat('HH:mm').format(event.start);
+    } else if (columnDate == eventEndDay) {
+      timeStr = 'ends ${DateFormat('HH:mm').format(event.end)}';
+    } else {
+      timeStr = 'All day';
+    }
     final dotColor = color ?? Colors.white54;
 
     return Column(
