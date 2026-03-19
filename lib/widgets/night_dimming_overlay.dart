@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/app_settings.dart';
 import '../providers/settings_provider.dart';
 
@@ -51,6 +52,7 @@ class _NightDimmingOverlayState extends State<NightDimmingOverlay> {
   void _onUserInteraction() {
     _wakeTimer?.cancel();
     if (!_manuallyWoken) {
+      WakelockPlus.enable();
       setState(() => _manuallyWoken = true);
     }
     _wakeTimer = Timer(_wakeTimeout, () {
@@ -63,19 +65,28 @@ class _NightDimmingOverlayState extends State<NightDimmingOverlay> {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
         final settings = settingsProvider.settings;
-        final showOverlay = _isDimmingActive(settings) && !_manuallyWoken;
+        final dimmingActive = _isDimmingActive(settings) && !_manuallyWoken;
+        final screenOff = dimmingActive && settings.nightDimmingLevel == 0.0;
+
+        if (screenOff) {
+          WakelockPlus.disable();
+        } else {
+          WakelockPlus.enable();
+        }
+
         return Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) => _onUserInteraction(),
           child: Stack(
             children: [
               widget.child,
-              if (showOverlay)
+              if (dimmingActive && !screenOff)
                 Container(
                   color: Colors.black.withValues(
                     alpha: 1.0 - settings.nightDimmingLevel,
                   ),
                 ),
+              if (screenOff) Container(color: Colors.black),
             ],
           ),
         );
